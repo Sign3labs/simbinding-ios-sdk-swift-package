@@ -2,7 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
-let version = "0.0.1000"
+let version = "0.0.1001"
 let package = Package(
     name: "SimBinding",
     platforms: [
@@ -17,7 +17,7 @@ let package = Package(
         .binaryTarget(
             name: "SimBinding",
             url: "https://cdn.sign3.in/mobile-sdk/ios/test/simbinding/v\(version)/SimBinding.xcframework.zip",
-            checksum: "167204a507ccf0443255e34ffe0dcdd776ccc446e31b4758270a4c464138d642"
+            checksum: "4307323abf2479ac3169c34e13756116066a010000660433779f848f6146d232"
         )
     ]
 )
