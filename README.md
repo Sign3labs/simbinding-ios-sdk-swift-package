@@ -24,8 +24,8 @@ SIM binding is driven by the Sign3 Intelligence SDK, so both SDKs go into the ap
 #### Using CocoaPods
 
 1. To integrate the SDKs into your Xcode project using CocoaPods, specify them in your Podfile.
-2. Sign3 Intelligence: checkout the [latest_version](https://github.com/Sign3labs/sign3intelligence-ios-sdk-swift-package/tree/main?tab=readme-ov-file#changelog)
-3. Sign3 SIM Binding: checkout the [latest version](#changelog)
+2. Sign3 Intelligence: checkout the [latest_version](https://github.com/Sign3labs/sign3intelligence-ios-sdk-swift-package/releases)
+3. Sign3 SIM Binding: checkout the [latest version](https://github.com/Sign3labs/simbinding-ios-sdk-swift-package)
 
 ```
 pod 'Sign3Intelligence', '~> <latest_version>'
@@ -34,12 +34,10 @@ pod 'SimBinding', '~> <latest_version>'
 
 #### Using Swift package manager
 
+```
 URL for the repository: https://github.com/Sign3labs/sign3intelligence-ios-sdk-swift-package
-
-#### Using the framework directly
-
-Add `SimBinding.xcframework` to your app target under **Frameworks, Libraries, and Embedded Content**, with **Embed & Sign**, next to `Sign3Intelligence.xcframework`. The framework carries its own dependencies, so nothing else is needed.
-
+URL for the repository: https://github.com/Sign3labs/simbinding-ios-sdk-swift-package
+```
 <br>
 
 ## App Transport Security
@@ -98,7 +96,7 @@ import SimBinding
 ### For Objective-C
 ``` objective-c
 #import "Sign3Intelligence/Sign3Intelligence-Swift.h"
-@import SimBinding;
+#import "SimBinding/SimBinding-Swift.h"
 ```
 
 <br>
@@ -191,22 +189,35 @@ if #available(iOS 15.0, *) {
 ```objective-c
 if #available(iOS 15.0, *) {
     UpdateOptionBuilder *builder = [[UpdateOptionBuilder alloc] init];
-    builder = [builder setPhoneNumber:@"919876543210"];   // country code + number, digits only
+    builder = [builder setPhoneNumber:@"919876543210"];      // country code + number, digits only
     builder = [builder setUserEventType:UserEventTypeLOGIN]; // LOGIN or SIGNUP
     UpdateOption *updateOption = [builder build];
-
     [[Sign3SDK getInstance] updateOptionsWithUpdateOption:updateOption];
 
-    [[Sign3SDK getInstance] getIntelligenceWithListener:self.listener];
+    Sign3 *listener = [[Sign3 alloc] init];
+    [[Sign3SDK getInstance] getIntelligenceWithListener:listener];
 
-    // - (void)onSuccessWithResponse:(IntelligenceResponse * _Nonnull)response {
-    //     NSString *snaRequestId = response.snaRequestID;
-    //     if (snaRequestId.length == 0) {
-    //         // SIM binding did not start for this score
-    //     } else {
-    //         // SIM binding is running. Send this id to your backend for the status check.
-    //     }
-    // }
+    @interface Sign3 : NSObject <IntelligenceResponseListener>
+    @end
+
+    @implementation Sign3
+
+    - (void)onSuccessWithResponse:(IntelligenceResponse * _Nonnull)response {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSString *snaRequestId = response.snaRequestID;
+            if (snaRequestId.length == 0) {
+                // SIM binding did not start for this score
+            } else {
+                // SIM binding is running. Send this id to your backend for the status check.
+            }
+        });
+    }
+
+    - (void)onErrorWithError:(IntelligenceError * _Nonnull)error {
+        // Something went wrong, handle the error message
+    }
+
+    @end
 }
 ```
 
@@ -476,9 +487,3 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 </details>
 
 <br>
-
-## Changelog
-### 1.0.0
-- Silent Network Authentication over the carrier network, with fallback to an SMS OTP verified through `verifyOtp`.
-- Driven by the Sign3 Intelligence SDK on login and signup scores; one API to call, only for the OTP fallback.
-- `IntelligenceResponse.snaRequestID` carries the transaction id for the `/auth/v1/status` check.
