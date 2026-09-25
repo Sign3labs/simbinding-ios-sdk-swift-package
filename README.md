@@ -8,7 +8,6 @@ The SDK is headless and is driven by the Sign3 Intelligence SDK. Apart from that
 
 ## Recommended
 - iOS 15.0 or higher
-- Cellular data on the device. SNA runs over the mobile network, not Wi-Fi.
 - [Access WiFi Information entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_networking_wifi-info)
 - [Location permission](https://developer.apple.com/documentation/corelocation/)
 - [iCloud](https://developer.apple.com/documentation/CloudKit)
@@ -25,8 +24,7 @@ SIM binding is driven by the Sign3 Intelligence SDK, so both SDKs go into the ap
 
 1. To integrate the SDKs into your Xcode project using CocoaPods, specify them in your Podfile.
 2. Sign3 Intelligence: checkout the [latest_version](https://github.com/Sign3labs/sign3intelligence-ios-sdk-swift-package/releases)
-3. Sign3 SIM Binding: checkout the [latest version](https://github.com/Sign3labs/simbinding-ios-sdk-swift-package)
-
+3. Sign3 SIM Binding: checkout the [latest version](https://github.com/Sign3labs/simbinding-ios-sdk-swift-package/releases)
 ```
 pod 'Sign3Intelligence', '~> <latest_version>'
 pod 'SimBinding', '~> <latest_version>'
@@ -40,9 +38,12 @@ URL for the repository: https://github.com/Sign3labs/simbinding-ios-sdk-swift-pa
 ```
 <br>
 
-## App Transport Security
+## Configure Info.plist for SNA
 
-SIM binding talks to the carrier endpoints over plain HTTP, which App Transport Security blocks by default. Add the following block to your app's `Info.plist`. If `NSAppTransportSecurity` is already present, add the listed domains one by one under `NSExceptionDomains`.
+Add the following block to your Info.plist only if you are using the SNA feature.
+ - If the NSAppTransportSecurity key is not already present, add the entire block below.
+ - If the NSAppTransportSecurity key is already present, add the listed domains one by one under NSExceptionDomains.
+
 
 ```xml
 <key>NSAppTransportSecurity</key>
