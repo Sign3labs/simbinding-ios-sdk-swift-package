@@ -144,23 +144,24 @@ if #available(iOS 15.0, *) {
 
 ## Starting SIM Binding
 
-You do not call the SIM binding SDK yourself. The Sign3 Intelligence SDK runs SIM binding as part of a login or signup score:
+Ask Sign3 to enable SIM binding for your tenant. Once SIM binding is enabled, you do not need to call the SIM binding SDK separately. The Sign3 Intelligence SDK internally handles the SNA and SMS flow.
 
-1. Ask Sign3 to enable SIM binding for your tenant.
-2. Set the user's phone number through `updateOptions`, **with the country code and no `+` or spaces** (`919876543210`), and a `LOGIN` or `SIGNUP` event type. SIM binding does not run for `TRANSACTION` or `OTHERS`.
+1. Based on your requirements, we will create a `templateID` for SNA, SMS, or SNA + SMS authentication and use that template ID for authentication.
+2. Set the user's phone number using updateOptions, including the country code without + or spaces (e.g., 919876543210), and set the UserEventType to AUTH. SIM binding runs only for the AUTH event type; it is not triggered for LOGIN, SIGNUP, TRANSACTION or OTHERS.
 3. Call `getIntelligence()`.
+4. On success, `onSuccess` receives an `IntelligenceResponse` whose `snaRequestId` holds the SNA request id. On failure, `onError` receives an `IntelligenceError` whose `errorMessage` carries the error code, message and description. Once you receive the `snaRequestId`, you need to poll the `Status Check API` to check the status of the SNA request. You can poll the Status Check API from your backend through the `Login API` until the SNA request reaches a final status. The recommended approach is to make a backend-to-backend call to perform the status check.
 
-On that score the Intelligence SDK brings the SIM binding engine up and binds the SIM under the transaction the backend opened. The score response carries the transaction id as `IntelligenceResponse.snaRequestID` — hold on to it, it is what the status API is asked about, and what the OTP fallback is verified under.
 
-Options are reset after every score, so update them again before each login or signup.
+NOTE: Options are reset after every getIntelligence call, so update them again before each AUTH score.
+
 
 ### For Swift
 
 ```swift
 if #available(iOS 15.0, *) {
     let updateOption = UpdateOption.UpdateOptionBuilder()
-        .setPhoneNumber("919876543210")        // country code + number, digits only
-        .setUserEventType(UserEventType.LOGIN) // LOGIN or SIGNUP
+        .setPhoneNumber("919876543210")        // Pass the phone number with the country code
+        .setUserEventType(UserEventType.AUTH)  // Set UserEventType.AUTH to initiate SIM binding
         .build()
 
     Sign3SDK.getInstance().updateOptions(updateOption: updateOption)
@@ -170,11 +171,11 @@ if #available(iOS 15.0, *) {
     class Sign3: IntelligenceResponseListener {
 
         func onSuccess(response: IntelligenceResponse) {
-            guard let snaRequestId = response.snaRequestID, !snaRequestId.isEmpty else {
-                // SIM binding did not start for this score
+            guard let snaRequestId = response.snaRequestId, !snaRequestId.isEmpty else {
+                // SIM binding was not started for this request. Handle the Intelligence Response as required.
                 return
             }
-            // SIM binding is running. Send this id to your backend for the status check.
+            // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
             print("SIM binding under \(snaRequestId)")
         }
 
@@ -190,8 +191,8 @@ if #available(iOS 15.0, *) {
 ```objective-c
 if #available(iOS 15.0, *) {
     UpdateOptionBuilder *builder = [[UpdateOptionBuilder alloc] init];
-    builder = [builder setPhoneNumber:@"919876543210"];      // country code + number, digits only
-    builder = [builder setUserEventType:UserEventTypeLOGIN]; // LOGIN or SIGNUP
+    builder = [builder setPhoneNumber:@"919876543210"];      // Pass the phone number with the country code
+    builder = [builder setUserEventType:UserEventTypeLOGIN];  // Set UserEventType.AUTH to initiate SIM binding
     UpdateOption *updateOption = [builder build];
     [[Sign3SDK getInstance] updateOptionsWithUpdateOption:updateOption];
 
@@ -205,11 +206,11 @@ if #available(iOS 15.0, *) {
 
     - (void)onSuccessWithResponse:(IntelligenceResponse * _Nonnull)response {
         dispatch_async(dispatch_get_main_queue(), ^{
-            NSString *snaRequestId = response.snaRequestID;
+            NSString *snaRequestId = response.snaRequestId;
             if (snaRequestId.length == 0) {
-                // SIM binding did not start for this score
+                // SIM binding was not started for this request. Handle the Intelligence Response as required.
             } else {
-                // SIM binding is running. Send this id to your backend for the status check.
+                // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
             }
         });
     }
@@ -222,16 +223,20 @@ if #available(iOS 15.0, *) {
 }
 ```
 
+> [!IMPORTANT]
+> **Recommended:** Once you receive the `snaRequestId`, poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed. Keep polling until it reaches a success/failed status. Never call the Status Check API from the app side, since a status checked on the device can be tampered and the credentials would be exposed.
+
+
 <br>
 
-## Verifying the OTP Fallback
+## Verifying the OTP 
 
 When the carrier cannot answer, the transaction falls back to an SMS OTP. Android reads and verifies that code by itself; iOS has no OTP auto-read, so collect the code from the user and pass it with the `snaRequestID` from the score response. The engine is already up from the score.
 
 ### For Swift
 
 ```swift
-Sign3SimBindingSDK.verifyOtp(otp: otpField.text ?? "", snaRequestID: snaRequestID)
+Sign3SimBindingSDK.verifyOtp(otp: otpField.text ?? "", snaRequestID: snaRequestId)
 ```
 
 ### For Objective-C
@@ -244,9 +249,207 @@ The outcome of the code is not returned on the device; ask the status API about 
 
 <br>
 
+
+
+
+### SIM Binding Result
+
+The HTTP status below is the one the SIM binding backend returned to the Intelligence SDK when it opened the transaction. On `200` the SDK calls `onSuccess` with an `IntelligenceResponse` carrying the `snaRequestId`. On `400` and `401` the SDK calls `onError` with an `IntelligenceError` whose `errorMessage` is `<errorCode>: <errorMessage> - <errorDescription>` and whose `requestId` is the Sign3 request id.
+
+#### Status code `200` — The transaction was opened
+
+<table>
+<tr>
+<th align="left" width="495">✅ SNA request id received</th>
+</tr>
+<tr>
+<td valign="top" width="495">
+
+```json
+{
+  "snaRequestId": "ARID_A1B2C3D4E5F6"
+}
+```
+
+</td>
+</tr>
+</table>
+
+#### Status code `400` — The request was not accepted
+
+<table>
+<tr>
+<th align="left" width="330">⚠️ 7119 · Invalid request Id</th>
+<th align="left" width="330">⚠️ 7106 · Invalid phoneNumber or email</th>
+<th align="left" width="330">⚠️ 7102 · Invalid phone number</th>
+<th align="left" width="330">⚠️ 7104 · Invalid email</th>
+<th align="left" width="330">⚠️ 7113 · Invalid expiry</th>
+</tr>
+<tr>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7119: Invalid Request - Request error: Invalid request Id"
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7106: Invalid Request - Request error: Invalid phoneNumber or email."
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7102: Invalid Request - Request error: Invalid phone number"
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7104: Invalid Request - Request error: Invalid email"
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7113: Invalid Request - Request error: Invalid expiry"
+}
+```
+
+</td>
+</tr>
+<tr>
+<th align="left" width="330">⏱️ 9001 · Timeout Error</th>
+<th align="left" width="330">⚠️ 9003 · Invalid phone number format</th>
+<th align="left" width="330">⚠️ 9004 · Template id not configured</th>
+</tr>
+<tr>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "9001: Timeout Error - Sign3 SIM binding creation timed out."
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "9003: Invalid Request - Sign3 SIM binding requires a phone number containing the country code followed by the subscriber number."
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "9004: Invalid Request - The SIM binding template ID is not configured for this tenant."
+}
+```
+
+</td>
+</tr>
+</table>
+
+#### Status code `401` — The tenant was not authorised
+
+<table>
+<tr>
+<th align="left" width="330">🔒 7012 · Credentials empty</th>
+<th align="left" width="330">🔒 7002 · Invalid credentials</th>
+<th align="left" width="330">🔒 7019 · Merchant blocked</th>
+</tr>
+<tr>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7012: Access blocked - Authorization error: Merchant credentials are empty"
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7002: Access blocked - Authorization error: Invalid credentials"
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "7019: Merchant Blocked - Your account has been temporarily Blocked. Please contact support for assistance."
+}
+```
+
+</td>
+</tr>
+<tr>
+<th align="left" width="330">🔒 9002 · Tenant credentials not configured</th>
+<th align="left" width="330">🔒 9005 · SIM binding not enabled</th>
+</tr>
+<tr>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "9002: Access blocked - Sign3 SIM binding tenantId or tenantSecret is not configured for this tenant."
+}
+```
+
+</td>
+<td valign="top" width="330">
+
+```json
+{
+  "requestId": "6f1c2a7e-3b9d-4c58-a1e2-9d7b5f0c4e21",
+  "errorMessage": "9005: Access blocked - Sign3 SIM binding is not enabled for this tenant."
+}
+```
+
+</td>
+</tr>
+</table>
+
+<br>
+
+
 ## Checking the SIM Binding Status
 
-The score returns as soon as the transaction is open; the binding itself finishes afterwards. Ask the status API what became of the `snaRequestID`.
+The score returns as soon as the transaction is open; the binding itself finishes afterwards. Ask the status API what became of the `snaRequestId`.
 
 **Call this from your backend.** The credentials below are your tenant id and tenant secret, and they must not ship in the app. The sample app calls it from the device only so the flow can be demonstrated on one screen.
 
@@ -263,59 +466,21 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 | Base URL | `https://intelligence.sign3.in` |
 | Method | `GET` |
 | Path | `/auth/v1/status` |
-| Query | `requestId` — the `snaRequestID` from `IntelligenceResponse` |
+| Query | `requestId` — the `snaRequestId` from `IntelligenceResponse` |
 | `Authorization` | `Basic` over `<tenantId>:<tenantSecret>`, both provided by Sign3 |
 
 ### Response
 
-<details open>
-<summary><b>&nbsp;<code>200</code> &nbsp;·&nbsp; The transaction is known</b></summary>
+#### Status code `200` — The transaction is known
 
-<details>
-<summary>🟡 &nbsp;<b><code>PENDING</code></b> &nbsp;— the carrier has not answered yet</summary>
-
-```json
-{
-  "auths": [
-    {
-      "identityType": "MOBILE",
-      "identityValue": "917069914791",
-      "channel": "SILENT_AUTH",
-      "methods": [
-        "SILENT_AUTH"
-      ],
-      "status": "PENDING",
-      "type": "PRIMARY"
-    }
-  ],
-  "derivedOperator": "AIRTEL",
-  "phoneDetail": {
-    "countryCode": "91",
-    "country": "IN",
-    "type": "MOBILE",
-    "homeOperator": "VI",
-    "location": "India",
-    "timeZones": [
-      "Asia/Calcutta"
-    ]
-  },
-  "simDetail": {
-    "operator": "AIRTEL",
-    "mcc": 405,
-    "mnc": 51
-  },
-  "networkDetail": {
-    "ip": "2401:4900:1c50:1a3b::1",
-    "ipType": "IPV6",
-    "operator": "AIRTEL"
-  }
-}
-```
-
-</details>
-
-<details>
-<summary>✅ &nbsp;<b><code>SUCCESS</code></b> &nbsp;— the SIM is bound</summary>
+<table>
+<tr>
+<th align="left" width="330">✅ SUCCESS</th>
+<th align="left" width="330">🟡 PENDING</th>
+<th align="left" width="330">❌ FAILED</th>
+</tr>
+<tr>
+<td valign="top" width="330">
 
 ```json
 {
@@ -361,10 +526,55 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
+</td>
+<td valign="top" width="330">
 
-<details>
-<summary>❌ &nbsp;<b><code>FAILED</code></b> &nbsp;— the SIM could not be bound</summary>
+```json
+{
+  "auths": [
+    {
+      "identityType": "MOBILE",
+      "identityValue": "917069914791",
+      "channel": "SILENT_AUTH",
+      "methods": [
+        "SILENT_AUTH"
+      ],
+      "status": "PENDING",
+      "type": "PRIMARY"
+    }
+  ],
+  "derivedOperator": "AIRTEL",
+  "phoneDetail": {
+    "countryCode": "91",
+    "country": "IN",
+    "type": "MOBILE",
+    "homeOperator": "VI",
+    "location": "India",
+    "timeZones": [
+      "Asia/Calcutta"
+    ]
+  },
+  "simDetail": {
+    "operator": "AIRTEL",
+    "mcc": 405,
+    "mnc": 51
+  },
+  "networkDetail": {
+    "ip": "2401:4900:1c50:1a3b::1",
+    "ipType": "IPV6",
+    "operator": "AIRTEL"
+  }
+}
+
+
+
+
+
+
+```
+
+</td>
+<td valign="top" width="330">
 
 ```json
 {
@@ -381,7 +591,7 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
       "error": {
         "errorCode": "SP40005",
         "message": "Operator not supported",
-        "description": "This operator is not supported for verification. Please try with a different network."
+        "description": "This operator isn’t supported. Please try a different network."
       }
     }
   ],
@@ -406,17 +616,23 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
     "ipType": "IPV4"
   }
 }
+
+
 ```
 
-</details>
+</td>
+</tr>
+</table>
 
-</details>
+#### Status code `400` — The request was not accepted
 
-<details>
-<summary><b>&nbsp;<code>400</code> &nbsp;·&nbsp; The request was not accepted</b></summary>
-
-<details>
-<summary>⚠️ &nbsp;<b><code>7170</code></b> &nbsp;— Auth not started yet</summary>
+<table>
+<tr>
+<th align="left" width="495">⚠️ 7170 · Auth not started yet</th>
+<th align="left" width="495">⚠️ 7119 · Invalid request Id</th>
+</tr>
+<tr>
+<td valign="top" width="495">
 
 ```json
 {
@@ -426,10 +642,8 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
-
-<details>
-<summary>⚠️ &nbsp;<b><code>7119</code></b> &nbsp;— Invalid request Id</summary>
+</td>
+<td valign="top" width="495">
 
 ```json
 {
@@ -439,15 +653,20 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
+</td>
+</tr>
+</table>
 
-</details>
+#### Status code `401` — The caller was not authorised
 
-<details>
-<summary><b>&nbsp;<code>401</code> &nbsp;·&nbsp; The caller was not authorised</b></summary>
-
-<details>
-<summary>🔒 &nbsp;<b><code>7012</code></b> &nbsp;— Merchant credentials are empty</summary>
+<table>
+<tr>
+<th align="left" width="330">🔒 7012 · Credentials empty</th>
+<th align="left" width="330">🔒 7002 · Invalid credentials</th>
+<th align="left" width="330">🔒 7019 · Merchant blocked</th>
+</tr>
+<tr>
+<td valign="top" width="330">
 
 ```json
 {
@@ -457,10 +676,8 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
-
-<details>
-<summary>🔒 &nbsp;<b><code>7002</code></b> &nbsp;— Invalid credentials</summary>
+</td>
+<td valign="top" width="330">
 
 ```json
 {
@@ -470,10 +687,8 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
-
-<details>
-<summary>🔒 &nbsp;<b><code>7019</code></b> &nbsp;— Merchant blocked</summary>
+</td>
+<td valign="top" width="330">
 
 ```json
 {
@@ -483,8 +698,35 @@ curl --location 'https://intelligence.sign3.in/auth/v1/status?requestId=ARID_411
 }
 ```
 
-</details>
+</td>
+</tr>
+</table>
 
-</details>
+<br>
+
+## Flow Diagram
+
+SIM binding in four simple steps: Sign3 switches it on, your app asks for a score, you get an id, and your backend checks what happened to it.
+
+```mermaid
+flowchart TD
+    A["1. Sign3 enables SIM binding for your tenant"]
+    B["2. Your app sets the phone number and the AUTH event, then calls getIntelligence()"]
+    C{"3. Did the response carry an snaRequestId?"}
+    NO["No &nbsp;→&nbsp; onError gives you the error code and message. Show it or retry."]
+    YES["Yes &nbsp;→&nbsp; SIM binding has started. Send the snaRequestId to your backend."]
+    D["4. Your backend calls the Status Check API with that id until the status is SUCCESS or FAILED"]
+
+    A --> B --> C
+    C -- No --> NO
+    C -- Yes --> YES --> D
+
+    style A fill:none,stroke:#2e7d32,stroke-width:2px
+    style B fill:none,stroke:#1565c0,stroke-width:2px
+    style C fill:none,stroke:#1565c0,stroke-width:2px
+    style NO fill:none,stroke:#c62828,stroke-width:2px
+    style YES fill:none,stroke:#1565c0,stroke-width:2px
+    style D fill:none,stroke:#ef6c00,stroke-width:2px
+```
 
 <br>
