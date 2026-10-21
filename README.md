@@ -1,19 +1,8 @@
 # Sign3 SIM Binding SDK Integration Guide for iOS
 
-The Sign3 SIM Binding SDK verifies that the phone number a user claims is the number of the SIM in the device they are holding. It does this carrier-side, over the cellular data interface, through Silent Network Authentication (SNA): nothing is sent to the user. When the carrier cannot answer, the flow falls back to an SMS OTP. iOS apps cannot read an SMS, so the code the user types is the one thing your app hands back to the SDK.
+The Sign3 SIM Binding SDK verifies that the phone number a user claims is the number of the SIM in the device they are holding. It does this carrier-side, over the cellular data interface, through Silent Network Authentication (SNA): nothing is sent to the user. When the carrier cannot answer, the flow falls back to an SMS OTP, which the SDK reads and verifies on its own.
 
-The SDK is headless and is driven by the Sign3 Intelligence SDK. Apart from that OTP fallback there is nothing to call and nothing to handle on the device; you only read the transaction id off the intelligence response and, from your backend, ask the Sign3 status API what became of it.
-
-<br>
-
-## Recommended
-- iOS 15.0 or higher
-- [Access WiFi Information entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_networking_wifi-info)
-- [Location permission](https://developer.apple.com/documentation/corelocation/)
-- [iCloud](https://developer.apple.com/documentation/CloudKit)
-
-> __NOTE:__ If the listed permissions are unavailable for the application, the corresponding values will not be collected, potentially limiting the reliability of Device Intelligence. We recommend enabling as many permissions as possible based on your use case to enhance the accuracy and completeness of the data collected.
-
+The SDK is headless and is driven entirely by the Sign3 Intelligence SDK. There is nothing to call and nothing to handle on the device; you only read the transaction id off the intelligence response and, from your backend, ask the Sign3 status API what became of it.
 <br>
 
 ## Installation
@@ -171,16 +160,13 @@ if #available(iOS 15.0, *) {
     class Sign3: IntelligenceResponseListener {
 
         func onSuccess(response: IntelligenceResponse) {
-            guard let snaRequestId = response.snaRequestId, !snaRequestId.isEmpty else {
-                // SIM binding was not started for this request. Handle the Intelligence Response as required.
-                return
-            }
             // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
             print("SIM binding under \(snaRequestId)")
         }
 
         func onError(error: IntelligenceError) {
-            // Something went wrong, handle the error message
+            // SIM binding could not be started or failed. Check IntelligenceError for the error code, message, and description.
+            print("Sign3SimBinding: requestId=\(error.requestId) \(error.errorMessage)")
         }
     }
 }
@@ -192,7 +178,7 @@ if #available(iOS 15.0, *) {
 if #available(iOS 15.0, *) {
     UpdateOptionBuilder *builder = [[UpdateOptionBuilder alloc] init];
     builder = [builder setPhoneNumber:@"919876543210"];      // Pass the phone number with the country code
-    builder = [builder setUserEventType:UserEventTypeLOGIN];  // Set UserEventType.AUTH to initiate SIM binding
+    builder = [builder setUserEventType:UserEventTypeAUTH];  // Set UserEventType.AUTH to initiate SIM binding
     UpdateOption *updateOption = [builder build];
     [[Sign3SDK getInstance] updateOptionsWithUpdateOption:updateOption];
 
@@ -206,17 +192,15 @@ if #available(iOS 15.0, *) {
 
     - (void)onSuccessWithResponse:(IntelligenceResponse * _Nonnull)response {
         dispatch_async(dispatch_get_main_queue(), ^{
+            // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
             NSString *snaRequestId = response.snaRequestId;
-            if (snaRequestId.length == 0) {
-                // SIM binding was not started for this request. Handle the Intelligence Response as required.
-            } else {
-                // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
-            }
+            NSLog(@"Sign3SimBinding: snaRequestId=%@", snaRequestId);
         });
     }
 
     - (void)onErrorWithError:(IntelligenceError * _Nonnull)error {
-        // Something went wrong, handle the error message
+        // SIM binding could not be started or failed. Check IntelligenceError for the error code, message, and description.
+        NSLog(@"Sign3SimBinding: requestId=%@ %@", error.requestId, error.errorMessage);
     }
 
     @end
@@ -224,14 +208,14 @@ if #available(iOS 15.0, *) {
 ```
 
 > [!IMPORTANT]
-> **Recommended:** Once you receive the `snaRequestId`, poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed. Keep polling until it reaches a success/failed status. Never call the Status Check API from the app side, since a status checked on the device can be tampered and the credentials would be exposed.
+> **Recommended:** Once you receive the snaRequestId, poll the Status Check API from your backend login/signup API to check whether SIM binding is PENDING, SUCCESS, or FAILED. Continue polling until the status reaches SUCCESS or FAILED. Never call the Status Check API from the app, as device-side checks can be tampered with and expose credentials.
 
 
 <br>
 
-## Verifying the OTP 
+## Verifying the OTP Fallback
 
-When the carrier cannot answer, the transaction falls back to an SMS OTP. Android reads and verifies that code by itself; iOS has no OTP auto-read, so collect the code from the user and pass it with the `snaRequestID` from the score response. The engine is already up from the score.
+When the carrier cannot answer, the transaction falls back to an SMS OTP. Android reads and verifies that code by itself; iOS has no OTP auto-read, so collect the code from the user and pass it with the `snaRequestId` from the response.
 
 ### For Swift
 
@@ -714,8 +698,8 @@ flowchart TD
     B["2. Your app sets the phone number and the AUTH event, then calls getIntelligence()"]
     C{"3. Did the response carry an snaRequestId?"}
     NO["No &nbsp;→&nbsp; onError gives you the error code and message. Show it or retry."]
-    YES["Yes &nbsp;→&nbsp; SIM binding has started. Send the snaRequestId to your backend."]
-    D["4. Your backend calls the Status Check API with that id until the status is SUCCESS or FAILED"]
+    YES["Yes &nbsp;→&nbsp; SIM binding has started. Send the snaRequestId to your backend and expect a verdict for it."]
+    D["4. Your backend calls the Status Check API with that ID until the status is SUCCESS or FAILED"]
 
     A --> B --> C
     C -- No --> NO
