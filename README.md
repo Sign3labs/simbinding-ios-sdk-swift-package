@@ -209,7 +209,7 @@ if #available(iOS 15.0, *) {
 
 > [!IMPORTANT]
 > **Recommended:** Once you receive the snaRequestId, poll the Status Check API from your backend login/signup API to check whether SIM binding is PENDING, SUCCESS, or FAILED. Continue polling until the status reaches SUCCESS or FAILED. Never call the Status Check API from the app, as device-side checks can be tampered with and expose credentials.
-
+<br>
 
 <br>
 
