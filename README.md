@@ -161,6 +161,7 @@ if #available(iOS 15.0, *) {
 
         func onSuccess(response: IntelligenceResponse) {
             // ⭐ Recommended: Poll the Status Check API from your backend to check whether SIM binding is pending, successful, or failed.
+            let snaRequestId = response.snaRequestId
             print("SIM binding under \(snaRequestId)")
         }
 
