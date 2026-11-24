@@ -1,0 +1,276 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.4.2 effective-5.10 (swiftlang-6.4.2.1.9 clang-2100.4.1.1)
+// swift-module-flags: -target x86_64-apple-ios15.0-simulator -enable-objc-interop -enable-library-evolution -language-mode 5 -O -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -module-name Sign3Intelligence
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.4.2
+import AVFoundation
+import AdSupport
+import AppTrackingTransparency
+import CallKit
+import SystemConfiguration.CaptiveNetwork
+import CloudKit
+import CommonCrypto
+import Compression
+import CoreGraphics
+import CoreLocation
+import CoreMotion
+import CoreTelephony
+import CryptoKit
+import DeviceCheck
+import Foundation
+import Foundation/*.Data*/
+import LocalAuthentication
+import MachO
+import Network
+import NetworkExtension
+import ObjectiveC
+import QuartzCore
+import Security
+@_exported import Sign3Intelligence
+import Swift
+import SystemConfiguration
+import UIKit
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+import os
+import MachO.dyld.utils
+import zlib
+@objc public class IntelligenceError : ObjectiveC::NSObject, Swift::Codable {
+  @objc final public let requestId: Swift::String
+  @objc final public let errorMessage: Swift::String
+  @objc public init(requestId: Swift::String, errorMessage: Swift::String)
+  @objc deinit
+  public func encode(to encoder: any Swift::Encoder) throws
+  required public init(from decoder: any Swift::Decoder) throws
+}
+@_inheritsConvenienceInitializers @objc public class DeviceMeta : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var cpuType: Swift::String?
+  @objc public var product: Swift::String?
+  @objc public var androidVersion: Swift::String?
+  @objc public var iOSVersion: Swift::String?
+  @objc public var storageAvailable: Swift::String?
+  @objc public var storageTotal: Swift::String?
+  @objc public var model: Swift::String?
+  @objc public var screenResolution: Swift::String?
+  @objc public var brand: Swift::String?
+  @objc public var totalRAM: Swift::String?
+  @objc override dynamic public init()
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+@objc public enum Environment : Swift::Int {
+  case DEV
+  case STAGING
+  case PROD
+  public var description: Swift::String {
+    get
+  }
+  public init?(rawValue: Swift::Int)
+  public typealias RawValue = Swift::Int
+  public var rawValue: Swift::Int {
+    get
+  }
+}
+@objc public enum UserEventType : Swift::Int {
+  case LOGIN
+  case SIGNUP
+  case TRANSACTION
+  case OTHERS
+  case AUTH
+  public func description() -> Swift::String
+  public init?(rawValue: Swift::Int)
+  public typealias RawValue = Swift::Int
+  public var rawValue: Swift::Int {
+    get
+  }
+}
+@_inheritsConvenienceInitializers @objc public class GPSLocation : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var latitude: Foundation::NSNumber?
+  @objc public var longitude: Foundation::NSNumber?
+  @objc public var altitude: Foundation::NSNumber?
+  @objc public var countryName: Swift::String?
+  @objc public var countryCode: Swift::String?
+  @objc public var adminArea: Swift::String?
+  @objc public var subAdminArea: Swift::String?
+  @objc public var featureName: Swift::String?
+  @objc public var postalCode: Swift::String?
+  @objc public var locality: Swift::String?
+  @objc public var subLocality: Swift::String?
+  @objc public var address: Swift::String?
+  @objc override dynamic public init()
+  @objc public init(latitude: Swift::Double, longitude: Swift::Double, altitude: Swift::Double, countryName: Swift::String?, countryCode: Swift::String?, adminArea: Swift::String?, subAdminArea: Swift::String?, featureName: Swift::String?, postalCode: Swift::String?, locality: Swift::String?, subLocality: Swift::String?, address: Swift::String?)
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc public class AppAnalytics : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var affinity: [Swift::String : Swift::Float]?
+  @objc override dynamic public init()
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+@objc public protocol IntelligenceResponseListener {
+  @objc func onSuccess(response: Sign3Intelligence::IntelligenceResponse)
+  @objc func onError(error: Sign3Intelligence::IntelligenceError)
+}
+@_hasMissingDesignatedInitializers @objc public class UpdateOption : ObjectiveC::NSObject {
+  @_inheritsConvenienceInitializers @objc public class UpdateOptionBuilder : ObjectiveC::NSObject {
+    @objc override dynamic public init()
+    @objc public func setPhoneNumber(_ phoneNumber: Swift::String?) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setPhoneInputType(_ phoneInputType: Sign3Intelligence::PhoneInputType) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setOtpInputType(_ otpInputType: Sign3Intelligence::OtpInputType) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setUserId(_ userId: Swift::String?) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setUserEventType(_ userEventType: Sign3Intelligence::UserEventType) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setMerchantId(_ merchantId: Swift::String?) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func setAdditionalAttributes(_ additionalAttributes: [Swift::String : Swift::String]) -> Sign3Intelligence::UpdateOption.Sign3Intelligence::UpdateOptionBuilder
+    @objc public func build() -> Sign3Intelligence::UpdateOption
+    @objc deinit
+  }
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers @objc public class Options : ObjectiveC::NSObject {
+  @_inheritsConvenienceInitializers @objc public class OptionBuilder : ObjectiveC::NSObject {
+    @objc override dynamic public init()
+    @objc public func setClientId(_ clientId: Swift::String) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setClientSecret(_ clientSecret: Swift::String) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setBaseUrl(_ url: Swift::String?) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setSSLPinning(_ sslPinning: Swift::Bool) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setEnvironment(_ environment: Sign3Intelligence::Environment) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setPhoneNumber(_ phoneNumber: Swift::String?) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setPhoneInputType(_ phoneInputType: Sign3Intelligence::PhoneInputType) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setOtpInputType(_ otpInputType: Sign3Intelligence::OtpInputType) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setUserId(_ userId: Swift::String?) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setUserEventType(_ userEventType: Sign3Intelligence::UserEventType) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setMerchantId(_ merchantId: Swift::String?) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func setAdditionalAttributes(_ additionalAttributes: [Swift::String : Swift::String]) -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+    @objc public func build() -> Sign3Intelligence::Options
+    @objc deinit
+  }
+  @objc public func toBuilder() -> Sign3Intelligence::Options.Sign3Intelligence::OptionBuilder
+  @objc deinit
+}
+@objc public enum OtpInputType : Swift::Int {
+  case MANUAL
+  case COPY_PASTED
+  case AUTO_FILLED
+  public func description() -> Swift::String
+  public init?(rawValue: Swift::Int)
+  public typealias RawValue = Swift::Int
+  public var rawValue: Swift::Int {
+    get
+  }
+}
+@_inheritsConvenienceInitializers @objc public class RuleAction : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var action: Swift::String?
+  @objc public var name: Swift::String?
+  @objc public var ruleDescription: Swift::String?
+  @objc public var message: Swift::String?
+  @objc override dynamic public init()
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+@objc public enum PhoneInputType : Swift::Int {
+  case MANUAL
+  case COPY_PASTE
+  case GOOGLE_HINT
+  public func description() -> Swift::String
+  public init?(rawValue: Swift::Int)
+  public typealias RawValue = Swift::Int
+  public var rawValue: Swift::Int {
+    get
+  }
+}
+@objc public class IntelligenceResponse : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var sessionId: Swift::String?
+  @objc final public let deviceId: Swift::String?
+  @objc final public let requestId: Swift::String?
+  @objc public var simulator: Foundation::NSNumber?
+  @objc public var jailbroken: Foundation::NSNumber?
+  @objc public var vpn: Foundation::NSNumber?
+  @objc public var geoSpoofed: Foundation::NSNumber?
+  @objc public var appTampering: Foundation::NSNumber?
+  @objc public var hooking: Foundation::NSNumber?
+  @objc public var proxy: Foundation::NSNumber?
+  @objc public var mirroredScreen: Foundation::NSNumber?
+  @objc public var gpsLocation: Sign3Intelligence::GPSLocation?
+  @objc public var cloned: Foundation::NSNumber?
+  @objc public var additionalData: [Swift::String : Swift::String]?
+  @objc public var clientUserIds: [Swift::String]?
+  @objc public var newDevice: Foundation::NSNumber?
+  @objc public var ip: Swift::String?
+  @objc public var ipDetails: Sign3Intelligence::IPDetails?
+  @objc public var factoryReset: Foundation::NSNumber?
+  @objc public var deviceRiskScore: Foundation::NSNumber?
+  @objc public var sessionRiskScore: Foundation::NSNumber?
+  @objc public var factoryResetTime: Foundation::NSNumber?
+  @objc public var deviceMeta: Sign3Intelligence::DeviceMeta?
+  @objc public var appAnalytics: Sign3Intelligence::AppAnalytics?
+  @objc public var ruleAction: Sign3Intelligence::RuleAction?
+  @objc public var harmfulAppDetected: Foundation::NSNumber?
+  @objc public var unsecuredWifi: Foundation::NSNumber?
+  @objc public var blacklistedDevice: Foundation::NSNumber?
+  @objc public var remoteAppProviders: Foundation::NSNumber?
+  @objc public var remoteAppProvidersCount: Foundation::NSNumber?
+  @objc public var riskReasonCodes: [Swift::String]?
+  @objc public var behaviourInsights: [Swift::String : Any]?
+  @objc public var riskScores: [Swift::String : Any]?
+  @objc public var snaRequestId: Swift::String?
+  @objc public init(sessionId: Swift::String?, deviceId: Swift::String?, requestId: Swift::String?, simulator: Swift::Bool, jailbroken: Swift::Bool, vpn: Swift::Bool, geoSpoofed: Swift::Bool, appTampering: Swift::Bool, hooking: Swift::Bool, proxy: Swift::Bool, mirroredScreen: Swift::Bool, gpsLocation: Sign3Intelligence::GPSLocation?, cloned: Swift::Bool, clientUserIds: [Swift::String]?, newDevice: Swift::Bool, ip: Swift::String?, ipDetails: Sign3Intelligence::IPDetails?, factoryReset: Swift::Bool, deviceRiskScore: Swift::Float, sessionRiskScore: Swift::Float, factoryResetTime: Swift::Int64, deviceMeta: Sign3Intelligence::DeviceMeta?, appAnalytics: Sign3Intelligence::AppAnalytics?, ruleAction: Sign3Intelligence::RuleAction?, harmfulAppDetected: Swift::Bool, unsecuredWifi: Swift::Bool, blacklistedDevice: Swift::Bool, remoteAppProviders: Swift::Bool, remoteAppProvidersCount: Swift::Int, riskReasonCodes: [Swift::String]? = nil, behaviourInsights: [Swift::String : Any]? = nil, riskScores: [Swift::String : Any]? = nil)
+  convenience public init(sessionId: Swift::String? = nil, deviceId: Swift::String? = nil, requestId: Swift::String? = nil)
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc final public class Sign3SDK : ObjectiveC::NSObject {
+  @available(iOS 15.0, *)
+  @objc public static func getInstance() -> Sign3Intelligence::Sign3SDK
+  @available(iOS 15.0, *)
+  @objc final public func initAsync(options: Sign3Intelligence::Options, completion: @escaping (Swift::Bool) -> Swift::Void)
+  @available(iOS 15.0, *)
+  @objc final public func updateOptions(updateOption: Sign3Intelligence::UpdateOption)
+  @available(iOS 15.0, *)
+  @objc final public func getIntelligence(listener: any Sign3Intelligence::IntelligenceResponseListener)
+  @available(iOS 15.0, *)
+  @objc final public func getSessionId() -> Swift::String
+  @available(iOS 15.0, *)
+  @objc final public func protectScreenCapture(_ viewController: UIKit::UIViewController)
+  @available(iOS 15.0, *)
+  @objc final public func stopScreenCaptureProtection(_ viewController: UIKit::UIViewController)
+  @available(iOS 15.0, *)
+  @objc final public func startAnalyzingBehaviour() -> Swift::String
+  @available(iOS 15.0, *)
+  @objc final public func stopAnalyzingBehaviour()
+  @available(iOS 15.0, *)
+  @objc final public func setCaptureContext(name: Swift::String?, attributes: [Swift::String : Swift::String]?)
+  @objc override dynamic public init()
+  @objc deinit
+}
+@_inheritsConvenienceInitializers @objc public class IPDetails : ObjectiveC::NSObject, Swift::Codable {
+  @objc public var asn: Swift::String?
+  @objc public var city: Swift::String?
+  @objc public var country: Swift::String?
+  @objc public var isp: Swift::String?
+  @objc public var region: Swift::String?
+  @objc public var fraudScore: Foundation::NSNumber?
+  @objc public var latitude: Foundation::NSNumber?
+  @objc public var longitude: Foundation::NSNumber?
+  @objc override dynamic public init()
+  required public init(from decoder: any Swift::Decoder) throws
+  public func encode(to encoder: any Swift::Encoder) throws
+  @objc deinit
+}
+extension Sign3Intelligence::Environment : Swift::Equatable {}
+extension Sign3Intelligence::Environment : Swift::Hashable {}
+extension Sign3Intelligence::Environment : Swift::RawRepresentable {}
+extension Sign3Intelligence::UserEventType : Swift::Equatable {}
+extension Sign3Intelligence::UserEventType : Swift::Hashable {}
+extension Sign3Intelligence::UserEventType : Swift::RawRepresentable {}
+extension Sign3Intelligence::OtpInputType : Swift::Equatable {}
+extension Sign3Intelligence::OtpInputType : Swift::Hashable {}
+extension Sign3Intelligence::OtpInputType : Swift::RawRepresentable {}
+extension Sign3Intelligence::PhoneInputType : Swift::Equatable {}
+extension Sign3Intelligence::PhoneInputType : Swift::Hashable {}
+extension Sign3Intelligence::PhoneInputType : Swift::RawRepresentable {}

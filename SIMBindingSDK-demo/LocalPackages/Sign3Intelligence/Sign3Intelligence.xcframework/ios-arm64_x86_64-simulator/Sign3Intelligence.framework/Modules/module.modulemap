@@ -1,0 +1,12 @@
+framework module Sign3Intelligence {
+    umbrella header "Sign3Intelligence.h"
+    export *
+    module * { export * }
+    
+    private header "Sign3PrivateHeader.h"
+    
+}
+
+module Sign3Intelligence.Swift {
+  header "Sign3Intelligence-Swift.h"
+}

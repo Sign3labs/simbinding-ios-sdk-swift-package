@@ -1,0 +1,24 @@
+{
+  "originHash" : "3e03a667c06ee5723ade0c7ac7274b742b7f1b7f758a946476f72ff9def2287b",
+  "pins" : [
+    {
+      "identity" : "sign3intelligence-ios-sdk-swift-package",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Sign3labs/sign3intelligence-ios-sdk-swift-package.git",
+      "state" : {
+        "branch" : "test",
+        "revision" : "d62913da0fec821a0118036ce35126345b230b4e"
+      }
+    },
+    {
+      "identity" : "simbinding-ios-sdk-swift-package",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Sign3labs/simbinding-ios-sdk-swift-package",
+      "state" : {
+        "branch" : "test",
+        "revision" : "c891f4e0234372f26b7f4eaae4369df2629107bd"
+      }
+    }
+  ],
+  "version" : 3
+}
